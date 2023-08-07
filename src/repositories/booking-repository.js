@@ -2,6 +2,11 @@ const { StatusCodes }= require('http-status-codes');
 const {Booking}= require('../models')
 const CrudRepository = require('./crud-repository')
 const AppError = require('../utils/errors/app-error'); 
+const res = require('express/lib/response');
+const { Op } = require('sequelize');
+const { ENUMS }= require('../utils/common');
+const { BOOKED,CANCELLED }= ENUMS.BOOKING_STATUS;
+
 
 class BookingRepository extends CrudRepository {
     constructor(){
@@ -9,13 +14,13 @@ class BookingRepository extends CrudRepository {
     }
     async createBooking(data,transaction){
        
-        const response = await this.model.create(data,{transaction:transaction});
+        const response = await Booking.create(data,{transaction:transaction});
         return response;
     }
 
     async get(data,transaction){
         
-        const response = await this.model.findByPk(data,{transaction:transaction});
+        const response = await Booking.findByPk(data,{transaction:transaction});
         if(!response){
             throw new AppError('Not able to find the resource',StatusCodes.NOT_FOUND);
         }
@@ -26,7 +31,7 @@ class BookingRepository extends CrudRepository {
 
 async update(id,data,transaction){ //data -> {col : val,....}
         
-    const response = await this.model.update(data,{
+    const response = await Booking.update(data,{
         where: {
             id:id,
         }
@@ -38,7 +43,38 @@ async update(id,data,transaction){ //data -> {col : val,....}
    
 }
 
+async  canceloldBookings(timestamp) {
+    const response = await Booking.update({status:CANCELLED},{
+        where: 
+        {
+            [Op.and]:[
+            {
+                    createdAt: 
+                            {
+                                [Op.lt]:timestamp
+                            },
+
+            },
+            {
+                    status:
+                            {
+                                [Op.ne]:BOOKED
+                            },
+                    status:
+                            {
+                                [Op.ne]: CANCELLED
+                            }
+            }
+            ]
+        }
+    })
+    return response;
+}
+
 
 }
+
+
+
 
 module.exports = BookingRepository

@@ -7,6 +7,7 @@ const { StatusCodes } = require('http-status-codes');
 const { error } = require('../utils/common/success-response');
 const e = require('express');
 const { ENUMS }= require('../utils/common');
+const res = require('express/lib/response');
 const { BOOKED,CANCELLED }= ENUMS.BOOKING_STATUS;
 
 const bookingRepository = new BookingRepository();
@@ -96,7 +97,19 @@ async function cancelBooking(bookingId){
     }
 }
 
+async function canceloldBookings(){
+    try{
+        const time = new Date(Date.now() - 1000*300);
+    const response = await bookingRepository.canceloldBookings(time);
+    return response;
+    }
+    catch(error){
+        throw error;
+    }
+}
+
 module.exports= {
     createbooking,
-    makePayment
+    makePayment,
+    canceloldBookings
 }
