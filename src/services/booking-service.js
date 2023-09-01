@@ -1,7 +1,7 @@
 const axios = require('axios');
 const{ BookingRepository }= require('../repositories');
 const db= require('../models');
-const{ ServerConfig }= require('../config');
+const{ ServerConfig,Queue }= require('../config');
 const AppError = require('../utils/errors/app-error');
 const { StatusCodes } = require('http-status-codes');
 const { error } = require('../utils/common/success-response');
@@ -33,8 +33,6 @@ async function createbooking(data){
         } catch(error){
             if(error.name = 'AxiosError'){
                 throw new AppError("Server problem",StatusCodes.INTERNAL_SERVER_ERROR)
-                
-
             }
             await transaction.rollback();
             throw error;
@@ -67,6 +65,12 @@ async function makePayment(data){
         }
 
         const response = await bookingRepository.update(parseInt(data.bookingId),{status:BOOKED},transaction);
+        Queue.sendData({
+            recepientEmail:'maindargirayyan@gmail.com',
+            subject: 'Flight Booked',
+            text:`Booking succesfully done for booking ${data.bookingId}`
+        }
+        ) 
         await transaction.commit();
 
     }catch(error){
